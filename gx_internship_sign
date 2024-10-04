@@ -1,0 +1,91 @@
+# 重要提示：本脚本仅供学习交流使用，严禁用于非法用途。请在下载后24小时内删除。
+
+
+import requests
+import json
+from geopy.distance import geodesic
+import random
+import math
+
+# 实习单位的经纬度
+company_lat = 88.888888  # 替换为单位所在经纬度
+company_lng = 888.888888  # 替换为单位所在经纬度
+
+# 生成指定范围内的随机经纬度
+def generate_random_location(lat, lng, radius):
+    earth_radius = 6371000
+    lat_rad = math.radians(lat)
+    lng_rad = math.radians(lng)
+    random_angle = random.uniform(0, 2 * math.pi)
+    random_radius = radius * math.sqrt(random.uniform(0, 1))
+    new_lat = math.asin(math.sin(lat_rad) * math.cos(random_radius / earth_radius) +
+                        math.cos(lat_rad) * math.sin(random_radius / earth_radius) * math.cos(random_angle))
+    new_lat_deg = math.degrees(new_lat)
+    new_lng = lng_rad + math.atan2(math.sin(random_angle) * math.sin(random_radius / earth_radius) * math.cos(lat_rad),
+                                  math.cos(random_radius / earth_radius) * math.sin(lat_rad))
+    new_lng_deg = math.degrees(new_lng)
+    return new_lat_deg, new_lng_deg
+
+# 生成1000米范围内的随机经纬度
+random_lat, random_lng = generate_random_location(company_lat, company_lng, 1000)
+
+# 设置请求头
+headers = {
+    "Accept": "application/json",
+    "Authorization": "Bearer YOUR_AUTHORIZATION_TOKEN",  # 需要自己去抓包获取替换
+    "Content-Type": "application/json",
+    "platform": "h5",
+    "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.52(0x18003425) NetType/4G Language/zh_CN"
+}
+
+# 获取签到信息和实习设置信息
+def get_student_info(headers):
+    sign_info_url = "https://gxzjsx.gxibvc.net/api/studentapp/Info"
+    settings_url = "https://gxzjsx.gxibvc.net/api/studentapp/Settings"
+
+    sign_info_response = requests.post(sign_info_url, headers=headers)
+    settings_response = requests.post(settings_url, headers=headers)
+
+    return sign_info_response.json(), settings_response.json()
+
+# 打印学生信息
+def print_student_info(sign_info_data, settings_data):
+    school_name = settings_data['Data'].get('SchoolName', "未知学校")
+    student_no = settings_data['Data'].get('StudentNo', "未知学号")
+    student_name = settings_data['Data'].get('StudentName', "未知姓名")
+    company_name = settings_data['Data'].get('CompanyName', "未知单位")
+    post = sign_info_data['Data'].get('Post', "未知职位")
+    total_sign_count = sign_info_data['Data'].get('TotalSignCount', 0)
+
+    # 使用格式化字符串来对齐打印
+    print(f"学校：{school_name:<5} 学号：{student_no:<5} 姓名：{student_name:<5}")
+    print(f"实习单位：{company_name:<5} 实习职位：{post:<5}")
+    print(f"{'签到天数':<3} {total_sign_count} 天")
+
+# 主逻辑
+def main():
+    try:
+        sign_info_data, settings_data = get_student_info(headers)
+        print_student_info(sign_info_data, settings_data)
+
+        # 如果用户在签到范围内
+        if geodesic((random_lat, random_lng), (company_lat, company_lng)).meters <= 1500:
+            sign_data = {"latitude": random_lat, "longitude": random_lng}
+            response = requests.post("https://gxzjsx.gxibvc.net/api/studentapp/Sign", headers=headers, json=sign_data)
+            if response.status_code == 200:
+                response_data = response.json()
+                if response_data.get("Code") == 1:
+                    sign_date = response_data.get("Msg").split(' ')[0]  # 从响应消息中提取日期
+                    print(f"已经签到过了，签到日期为：{sign_date}")
+                else:
+                    print("签到成功")
+                    print(json.dumps(response_data, indent=4))
+            else:
+                print("签到失败，状态码：", response.status_code)
+        else:
+            print(f"你当前的位置不在签到范围内，距离实习单位还有 {geodesic((random_lat, random_lng), (company_lat, company_lng)).meters:.2f} 米。")
+    except requests.exceptions.RequestException as e:
+        print(f"网络请求失败: {e}")
+
+if __name__ == "__main__":
+    main()
