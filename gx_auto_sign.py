@@ -26,7 +26,7 @@ import random
 import math
 
 # 变量类型(本地/青龙)
-Btype = "本地"
+Btype = "青龙"
 # 域名(无法使用时请更换)
 domain = 'https://gxzjsx.gxibvc.net/api/studentapp'
 # 保持连接,重复利用
@@ -188,7 +188,7 @@ if __name__ == "__main__":
         ck_token = [
             # 这里填写本地变量
 
-            {"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxNDUxMjUxMzEyMjAxMjAiLCJleHAiOjE3MjgyOTIwMDYsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3QiLCJhdWQiOiJodHRwOi8vbG9jYWxob3N0In0.NOjS1mWegh_1f1De9UIR65p6r5H9hwBUcbTM_KA77oE"}
+            {"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCIxxxxxxxx"}
         ]
         if ck_token == []:
             print(f'⛔ 本地变量异常: 请添加本地ck_token示例:{linxi_tips}')
