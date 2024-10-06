@@ -74,7 +74,7 @@ def user_info(i, ck):
     # 检查请求是否成功
     if results['Info']['Code'] == 0 and results['Settings']['Code'] == 0:
         print(f"账号【{i + 1}】✅")
-        info_message = f"学校：{results['Settings']['Data']['SchoolName']} 学号：{results['Settings']['Data']['StudentNo']} 姓名：{results['Settings']['Data']['StudentName']}\n实习单位：{results['Settings']['Data']['CompanyName']} 实习职位：{results['Info']['Data']['Post']} 签到天数：{results['Info']['Data']['TotalSignCount']}"
+        info_message = f"学校：{results['Settings']['Data']['SchoolName']} 学号：{results['Settings']['Data']['StudentNo']} 姓名：{results['Settings']['Data']['StudentName']} 签到天数：{results['Info']['Data']['TotalSignCount']}\n实习单位：{results['Settings']['Data']['CompanyName']} 实习职位：{results['Info']['Data']['Post']}"
         print(info_message)
         if os.getenv("linxi_push"):
             Wxpusher(name, os.getenv("linxi_push"), info_message)
