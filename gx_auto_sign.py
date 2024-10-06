@@ -83,6 +83,7 @@ def user_info(i, ck):
 def do_read(i, ck):
     headers["Authorization"] = ck["Authorization"]
     info_response = ss.post(domain + "/Info", headers=headers).json()
+    settings_data = ss.post(domain + "/Settings", headers=headers).json()
 
     if info_response and 'Data' in info_response and info_response['Code'] == 0:
         sign_today = info_response['Data'].get('SignToday', False)
@@ -92,7 +93,6 @@ def do_read(i, ck):
     else:
         print(f"账号【{i + 1}】❌获取签到状态失败: {info_response.get('Msg', '无错误信息')}")
         return
-    settings_data = ss.post(domain + "/Settings", headers=headers).json()
 
     if settings_data and 'Data' in settings_data and settings_data['Code'] == 0:
         random_lat, random_lng = generate_random_location(settings_data['Data']['CompanyLat'],settings_data['Data']['CompanyLng'],settings_data['Data']['SignRange'])
