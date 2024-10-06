@@ -26,7 +26,7 @@ import random
 import math
 
 # 变量类型(本地/青龙)
-Btype = "青龙"
+Btype = "本地"
 # 域名(无法使用时请更换)
 domain = 'https://gxzjsx.gxibvc.net/api/studentapp'
 # 保持连接,重复利用
@@ -65,39 +65,48 @@ def generate_random_location(lat, lng, radius):
     return lat, lng
 
 def user_info(i, ck):
-    headers["Authorization"] = ck["Authorization"]
-    result_info = ss.post(domain + "/Info", headers=headers).json()
-    result_settings = ss.post(domain + "/Settings", headers=headers).json()
+    headers['Authorization'] = ck['Authorization']
+    results = {
+        "Info": ss.post(domain + "/Info", headers=headers).json(),
+        "Settings": ss.post(domain + "/Settings", headers=headers).json()
+    }
 
-    if result_info['Code'] == 0 and result_settings['Code'] == 0:
-        print(f"账号【{i + 1}】✅ ")
-        info_message = f"学校：{result_settings['Data']['SchoolName']} 学号：{result_settings['Data']['StudentNo']} 姓名：{result_settings['Data']['StudentName']}\n实习单位：{result_settings['Data']['CompanyName']} 实习职位：{result_info['Data']['Post']} 签到天数：{result_info['Data']['TotalSignCount']}"
+    # 检查请求是否成功
+    if results['Info']['Code'] == 0 and results['Settings']['Code'] == 0:
+        print(f"账号【{i + 1}】✅")
+        info_message = f"学校：{results['Settings']['Data']['SchoolName']} 学号：{results['Settings']['Data']['StudentNo']} 姓名：{results['Settings']['Data']['StudentName']}\n实习单位：{results['Settings']['Data']['CompanyName']} 实习职位：{results['Info']['Data']['Post']} 签到天数：{results['Info']['Data']['TotalSignCount']}"
         print(info_message)
         if os.getenv("linxi_push"):
             Wxpusher(name, os.getenv("linxi_push"), info_message)
     else:
-        error_message = f"获取信息失败: {result_info.get('msg', '无信息')} 获取设置失败: {result_settings.get('msg', '无设置')}"
-        print(f"账号【{i + 1}】❌{error_message}")
+        info_error = results['Info'].get('Msg', '没有返回信息') if 'Code' in results['Info'] and results['Info']['Code'] != 0 else ""
+        settings_error = results['Settings'].get('Msg', '没有返回信息') if 'Code' in results['Settings'] and results['Settings']['Code'] != 0 else ""
+        error_message = f"获取信息失败: {info_error}, 获取设置失败: {settings_error}"
+        print(f"账号【{i + 1}】🚫 {error_message}")
+        if os.getenv("linxi_push"):
+            Wxpusher(name, os.getenv("linxi_push"), error_message)
 
 
 def do_read(i, ck):
     headers["Authorization"] = ck["Authorization"]
-    info_response = ss.post(domain + "/Info", headers=headers).json()
-    settings_data = ss.post(domain + "/Settings", headers=headers).json()
+    results = {
+        "Info": ss.post(domain + "/Info", headers=headers).json(),
+        "Settings": ss.post(domain + "/Settings", headers=headers).json()
+    }
 
-    if info_response and 'Data' in info_response and info_response['Code'] == 0:
-        sign_today = info_response['Data'].get('SignToday', False)
+    if results['Info'] and 'Data' in results['Info'] and results['Info']['Code'] == 0:
+        sign_today = results['Info']['Data'].get('SignToday', False)
         if sign_today:
             print(f"账号【{i + 1}】✅今天已经签到过了")
             return
     else:
-        print(f"账号【{i + 1}】❌获取签到状态失败: {info_response.get('Msg', '无错误信息')}")
+        print(f"账号【{i + 1}】❌获取签到状态失败: {results['Info'].get('Msg', '无错误信息')}")
         return
 
-    if settings_data and 'Data' in settings_data and settings_data['Code'] == 0:
-        random_lat, random_lng = generate_random_location(settings_data['Data']['CompanyLat'],settings_data['Data']['CompanyLng'],settings_data['Data']['SignRange'])
+    if results['Settings'] and 'Data' in results['Settings'] and results['Settings']['Code'] == 0:
+        random_lat, random_lng = generate_random_location(results['Settings']['Data']['CompanyLat'],results['Settings']['Data']['CompanyLng'],results['Settings']['Data']['SignRange'])
 
-        if geodesic((random_lat, random_lng), (settings_data['Data']['CompanyLat'], settings_data['Data']['CompanyLng'])).meters <= settings_data['Data']['SignRange']:
+        if geodesic((random_lat, random_lng), (results['Settings']['Data']['CompanyLat'], results['Settings']['Data']['CompanyLng'])).meters <= results['Settings']['Data']['SignRange']:
             sign_data = {"Lat": random_lat, "Lng": random_lng}
             sign_response = requests.post(domain + "/Sign", headers=headers, json=sign_data)
             result = sign_response.json()
@@ -115,7 +124,7 @@ def do_read(i, ck):
         else:
             print(f"生成的随机位置不在签到范围内")
     else:
-        message = f"账号【{i + 1}】获取签到信息失败: {settings_data.get('Msg', '无错误信息')}"
+        message = f"账号【{i + 1}】获取签到信息失败: {results['Settings'].get('Msg', '无错误信息')}"
         print(message)
         if os.getenv("linxi_push"):
             Wxpusher(name, os.getenv("linxi_push"), message)
@@ -187,8 +196,7 @@ if __name__ == "__main__":
         # 本地CK列表
         ck_token = [
             # 这里填写本地变量
-
-            {"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCIxxxxxxxx"}
+            {"Authorization":"Bearer eyjalkgnlanlxxxxxxxx"}
         ]
         if ck_token == []:
             print(f'⛔ 本地变量异常: 请添加本地ck_token示例:{linxi_tips}')
